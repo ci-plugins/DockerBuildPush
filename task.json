@@ -1,0 +1,542 @@
+{
+  "atomCode": "DockerBuildPushGo",
+  "execution": {
+    "language": "golang",
+    "demands": [],
+    "packagePath": "app",
+    "target": "chmod +x ./app && ./app"
+  },
+  "input": {
+    "selectOp": {
+      "label": "操作功能名(增删改查排序)",
+      "default": "login_build_push",
+      "type": "enum-input",
+      "required": true,
+      "disabled": false,
+      "hidden": false,
+      "lineNumber": 1,
+      "isSensitive": false,
+      "list": [
+        {
+          "label": "编译构建和推送镜像",
+          "value": "login_build_push"
+        },
+        {
+          "label": "仓库间转存复制镜像",
+          "value": "copy_image_to"
+        }
+      ]
+    },
+    "srcAuthType": {
+      "label": "源镜像仓库认证类型",
+      "default": "LANDUN_TICKET",
+      "desc": "",
+      "type": "enum-input",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "list": [
+        {
+          "label": "蓝盾凭证库",
+          "value": "LANDUN_TICKET"
+        },
+        {
+          "label": "手工输入",
+          "value": "MY_INPUT"
+        }
+      ],
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "copy_image_to"
+          }
+        ]
+      }
+    },
+    "srcRegUsername": {
+      "label": "源镜像仓库登录用户名",
+      "default": "",
+      "placeholder": "源镜像仓库登录用户名",
+      "type": "vuex-input",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {
+            "key": "srcAuthType",
+            "value": "MY_INPUT"
+          },
+          {
+            "key": "selectOp",
+            "value": "copy_image_to"
+          }
+        ]
+      }
+    },
+    "srcRegPassword": {
+      "label": "源镜像仓库登录密码",
+      "default": "",
+      "placeholder": "源镜像仓库登录密码",
+      "type": "vuex-input",
+      "inputType": "password",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": true,
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {
+            "key": "srcAuthType",
+            "value": "MY_INPUT"
+          },
+          {
+            "key": "selectOp",
+            "value": "copy_image_to"
+          }
+        ]
+      }
+    },
+    "srcTicketId": {
+      "label": "复制源镜像仓库的凭证,如不需要登录请留空",
+      "default": "",
+      "placeholder": "请选择",
+      "type": "devops-select",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "optionsConf": {
+        "searchable": true,
+        "clearable": true,
+        "multiple": false,
+        "url": "/ticket/api/user/credentials/{projectId}/hasPermissionList?permission=USE&page=1&pageSize=100&credentialTypes=USERNAME_PASSWORD",
+        "paramId": "credentialId",
+        "paramName": "credentialName",
+        "itemTargetUrl": "/ticket/{projectId}/createCredential/USERNAME_PASSWORD/true",
+        "itemText": "添加相应的凭证",
+        "hasAddItem": true
+      },
+      "rely": {
+        "operation": "AND",
+        "expression": [
+          {
+            "key": "srcAuthType",
+            "value": "LANDUN_TICKET"
+          },
+          {
+            "key": "selectOp",
+            "value": "copy_image_to"
+          }
+        ]
+      }
+    },
+    "srcImage": {
+      "label": "复制源镜像地址（含域名+路径）",
+      "default": "",
+      "placeholder": "例如：docker.io/library/centos",
+      "type": "vuex-input",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "copy_image_to"
+          }
+        ]
+      }
+    },
+    "srcImageName": {
+      "label": "复制源镜像地址（含域名+路径）- gitci专用",
+      "default": "",
+      "placeholder": "",
+      "type": "vuex-input",
+      "required": false,
+      "disabled": false,
+      "hidden": true,
+      "isSensitive": false,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "copy_image_to"
+          }
+        ]
+      }
+    },
+    "srcImageTag": {
+      "label": "复制源镜像tag,只能写一个",
+      "default": "",
+      "placeholder": "只能包含大小写字母、数字、下划线",
+      "type": "vuex-textarea",
+      "desc": "只能包含大小写字母、数字、下划线，不能含中划线、斜杠等，不能超过127个字符",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "copy_image_to"
+          }
+        ]
+      }
+    },
+    "targetAuthType": {
+      "label": "目标镜像仓库认证类型",
+      "default": "LANDUN_TICKET",
+      "desc": "",
+      "type": "enum-input",
+      "required": true,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "list": [
+        {
+          "label": "蓝盾凭证库",
+          "value": "LANDUN_TICKET"
+        },
+        {
+          "label": "手工输入",
+          "value": "MY_INPUT"
+        }
+      ],
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "login_build_push"
+          },
+          {
+            "key": "selectOp",
+            "value": "copy_image_to"
+          }
+        ]
+      }
+    },
+    "targetRegUsername": {
+      "label": "目标镜像仓库登录用户名",
+      "default": "",
+      "placeholder": "目标镜像仓库登录用户名",
+      "type": "vuex-input",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "targetAuthType",
+            "value": "MY_INPUT"
+          }
+        ]
+      }
+    },
+    "targetRegPassword": {
+      "label": "目标镜像仓库登录密码",
+      "default": "",
+      "placeholder": "目标镜像仓库登录密码",
+      "type": "vuex-input",
+      "inputType": "password",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": true,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "targetAuthType",
+            "value": "MY_INPUT"
+          }
+        ]
+      }
+    },
+    "targetTicketId": {
+      "label": "选择登录到目标镜像仓库的凭证",
+      "default": "",
+      "placeholder": "请选择",
+      "type": "devops-select",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "optionsConf": {
+        "searchable": true,
+        "clearable": true,
+        "multiple": false,
+        "url": "/ticket/api/user/credentials/{projectId}/hasPermissionList?permission=USE&page=1&pageSize=100&credentialTypes=USERNAME_PASSWORD",
+        "paramId": "credentialId",
+        "paramName": "credentialName",
+        "itemTargetUrl": "/ticket/{projectId}/createCredential/USERNAME_PASSWORD/true",
+        "itemText": "添加相应的凭证",
+        "hasAddItem": true
+      },
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "targetAuthType",
+            "value": "LANDUN_TICKET"
+          }
+        ]
+      }
+    },
+    "targetImage": {
+      "label": "目标推送镜像地址（含域名+路径）",
+      "default": "",
+      "placeholder": "例如：docker.io/library/centos",
+      "type": "vuex-input",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "login_build_push"
+          },
+          {
+            "key": "selectOp",
+            "value": "copy_image_to"
+          }
+        ]
+      }
+    },
+    "targetImageName": {
+      "label": "目标镜像地址（含域名+路径）- gitci专用",
+      "default": "",
+      "placeholder": "",
+      "type": "vuex-input",
+      "required": false,
+      "disabled": false,
+      "hidden": true,
+      "isSensitive": false,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "login_build_push"
+          },
+          {
+            "key": "selectOp",
+            "value": "copy_image_to"
+          }
+        ]
+      }
+    },
+    "targetImageTag": {
+      "label": "目标镜像tag, 多个换行分隔",
+      "default": "",
+      "placeholder": "只能包含大小写字母、数字、下划线",
+      "type": "vuex-textarea",
+      "desc": "只能包含大小写字母、数字、下划线，不能含中划线、斜杠等，不能超过127个字符",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "login_build_push"
+          },
+          {
+            "key": "selectOp",
+            "value": "copy_image_to"
+          }
+        ]
+      }
+    },
+    "dockerBuildDir": {
+      "label": "Docker Build执行目录（workspace相对路径，如：src/resource）",
+      "default": ".",
+      "type": "vuex-input",
+      "desc": " docker build 命令执行的路径  ",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "login_build_push"
+          }
+        ]
+      }
+    },
+    "dockerFilePath": {
+      "label": "docker build执行目录 + Dockerfile文件路径（如：src/resource/Dockerfile）",
+      "default": "Dockerfile",
+      "type": "vuex-input",
+      "desc": "Dockerfile相对docker build执行目录的路径，不填默认为根目录下的Dockerfile",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "login_build_push"
+          }
+        ]
+      }
+    },
+    "dockerBuildArgs": {
+      "label": "docker build build-arg参数的值，多个换行分隔",
+      "default": "",
+      "placeholder": "arg1=value1\narg2=value2",
+      "type": "vuex-textarea",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "login_build_push"
+          }
+        ]
+      }
+    },
+    "dockerBuildHosts": {
+      "label": "docker build add-host参数的值，多个换行分隔",
+      "type": "vuex-textarea",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "login_build_push"
+          },
+          {
+            "key": "selectOp",
+            "value": "copy_image_to"
+          }
+        ]
+      }
+    },
+    "prootIgnorePath": {
+      "label": "proot忽略路径，多个换行分隔",
+      "type": "vuex-textarea",
+      "default": "/etc/hosts\n/etc/resolv.conf\n/etc/nsswitch.conf\n",
+      "desc": "不懂请保持默认值,proot忽略路径,被忽略的目录两个作用,1变成只读文件改成挂载使用运行proot那一层系统中的文件,2不会打包进最终镜像中",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "login_build_push"
+          }
+        ]
+      }
+    },
+    "targetRepoItemStr": {
+      "label": "targetRepoItem",
+      "default": [],
+      "type": "key-value-normal",
+      "required": false,
+      "disabled": false,
+      "hidden": true,
+      "isSensitive": true,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "login_build_push"
+          }
+        ]
+      }
+    },
+    "sourceRepoItemsStr": {
+      "label": "sourceRepoItems",
+      "default": [],
+      "type": "key-value-normal",
+      "desc": "",
+      "required": false,
+      "disabled": false,
+      "hidden": true,
+      "isSensitive": true,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "login_build_push"
+          }
+        ]
+      }
+    },
+    "dockerCommand": {
+      "label": "docker命令(如docker login docker pull ,docker build,docker run等等)",
+      "default": "docker help",
+      "placeholder": "用法有异常先docker help命令一行写完,不能换行.双引单引号需要转义",
+      "type": "vuex-input",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false,
+      "rely": {
+        "operation": "OR",
+        "expression": [
+          {
+            "key": "selectOp",
+            "value": "run_docker_cmd"
+          }
+        ]
+      }
+    }
+  },
+  "output": {
+    "BK_DOCKER_TARGE_IMAGE_NAME": {
+      "description": "目标镜像地址",
+      "type": "string",
+      "props": {
+        "noticeMail": false
+      },
+      "isSensitive": false
+    },
+    "BK_DOCKER_TARGE_IMAGE_TAG": {
+      "description": "目标镜像Tag",
+      "type": "string",
+      "props": {
+        "noticeMail": false
+      },
+      "isSensitive": false
+    }
+  }
+}
