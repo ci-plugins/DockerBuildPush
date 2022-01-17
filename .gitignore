@@ -1,0 +1,13 @@
+.idea/
+*.iml
+.DS_Store
+output.json
+.sdk.json
+input.json
+dockerbuildpushgo
+run_var_can_delete_it/
+trace.out
+out/
+out/executor
+rice
+rice-box.go

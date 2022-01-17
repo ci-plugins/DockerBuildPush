@@ -31,8 +31,8 @@
 package main
 
 import (
-	"github.com/ci-plugins/bkci-DockerBuildPush/api"
-	"github.com/ci-plugins/bkci-DockerBuildPush/log"
+	"github.com/ci-plugins/DockerBuildPush/api"
+	"github.com/ci-plugins/DockerBuildPush/log"
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/syyongx/php2go"
 	"io/ioutil"

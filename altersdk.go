@@ -34,7 +34,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"github.com/ci-plugins/bkci-DockerBuildPush/api"
+	"github.com/ci-plugins/DockerBuildPush/api"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -42,7 +42,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ci-plugins/bkci-DockerBuildPush/log"
+	"github.com/ci-plugins/DockerBuildPush/log"
 )
 
 // http head keys

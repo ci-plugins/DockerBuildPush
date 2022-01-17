@@ -33,12 +33,13 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"github.com/ci-plugins/DockerBuildPush/log"
 	"io/ioutil"
 	"os"
 	"strings"
-	"github.com/ci-plugins/bkci-DockerBuildPush/log"
 )
 
+// GlobalSdkEvn
 var GlobalSdkEvn *SdkEnv
 var gAtomBaseParam *AtomBaseParam
 var gAllAtomParam map[string]interface{}
@@ -48,6 +49,7 @@ var gDataDir string
 var gInputFile string
 var gOutputFile string
 
+// init
 func init() {
 	gAtomOutput = NewAtomOutput()
 	gDataDir = getDataDir()
@@ -57,6 +59,7 @@ func init() {
 	initAtomParam()
 }
 
+// initAtomParam
 func initAtomParam() {
 	err := LoadInputParam(&gAllAtomParam)
 	if err != nil {
@@ -72,6 +75,7 @@ func initAtomParam() {
 	}
 }
 
+// GetInputParam
 func GetInputParam(name string) string {
 	value := gAllAtomParam[name]
 	if value == nil {
@@ -84,6 +88,7 @@ func GetInputParam(name string) string {
 	return strValue
 }
 
+// LoadInputParam
 func LoadInputParam(v interface{}) error {
 	file := gDataDir + "/" + gInputFile
 	data, err := ioutil.ReadFile(file)
@@ -99,6 +104,7 @@ func LoadInputParam(v interface{}) error {
 	return nil
 }
 
+// initSdkEnv
 func initSdkEnv() {
 	filePath := gDataDir + "/.sdk.json"
 	data, err := ioutil.ReadFile(filePath)
@@ -117,6 +123,7 @@ func initSdkEnv() {
 	os.Remove(filePath)
 }
 
+// getDataDir
 func getDataDir() string {
 	dir := strings.TrimSpace(os.Getenv(DataDirEnv))
 	if len(dir) == 0 {
@@ -125,6 +132,7 @@ func getDataDir() string {
 	return dir
 }
 
+// getInputFile
 func getInputFile() string {
 	file := strings.TrimSpace(os.Getenv(InputFileEnv))
 	if len(file) == 0 {
@@ -133,6 +141,7 @@ func getInputFile() string {
 	return file
 }
 
+// getOutputFile
 func getOutputFile() string {
 	file := strings.TrimSpace(os.Getenv(OutputFileEnv))
 	if len(file) == 0 {
@@ -141,18 +150,22 @@ func getOutputFile() string {
 	return file
 }
 
+// GetOutputData
 func GetOutputData(key string) interface{} {
 	return gAtomOutput.Data[key]
 }
 
+// AddOutputData
 func AddOutputData(key string, data interface{}) {
 	gAtomOutput.Data[key] = data
 }
 
+// RemoveOutputData
 func RemoveOutputData(key string) {
 	delete(gAtomOutput.Data, key)
 }
 
+// WriteOutput
 func WriteOutput() error {
 	data, _ := json.Marshal(gAtomOutput)
 
@@ -165,6 +178,7 @@ func WriteOutput() error {
 	return nil
 }
 
+// FinishBuild
 func FinishBuild(status Status, msg string) {
 	gAtomOutput.Message = msg
 	gAtomOutput.Status = status
@@ -181,6 +195,7 @@ func FinishBuild(status Status, msg string) {
 	}
 }
 
+// FinishBuildWithErrorCode
 func FinishBuildWithErrorCode(status Status, msg string, errorCode int) {
 	gAtomOutput.Message = msg
 	gAtomOutput.Status = status
@@ -198,54 +213,67 @@ func FinishBuildWithErrorCode(status Status, msg string, errorCode int) {
 	}
 }
 
+// SetAtomOutputType
 func SetAtomOutputType(atomOutputType string) {
 	gAtomOutput.Type = atomOutputType
 }
 
+// GetProjectName
 func GetProjectName() string {
 	return gAtomBaseParam.ProjectName
 }
 
+// GetProjectDisplayName
 func GetProjectDisplayName() string {
 	return gAtomBaseParam.ProjectNameCn
 }
 
+// GetPipelineId
 func GetPipelineId() string {
 	return gAtomBaseParam.PipelineId
 }
 
+// GetPipelineName
 func GetPipelineName() string {
 	return gAtomBaseParam.PipelineName
 }
 
+// GetPipelineBuildId
 func GetPipelineBuildId() string {
 	return gAtomBaseParam.PipelineBuildId
 }
 
+// GetPipelineBuildNumber
 func GetPipelineBuildNumber() string {
 	return gAtomBaseParam.PipelineBuildNum
 }
 
+// GetPipelineStartType
 func GetPipelineStartType() string {
 	return gAtomBaseParam.PipelineStartType
 }
 
+// GetPipelineStartUserId
 func GetPipelineStartUserId() string {
 	return gAtomBaseParam.PipelineStartUserId
 }
 
+// GetPipelineStartUserName
 func GetPipelineStartUserName() string {
 	return gAtomBaseParam.PipelineStartUserName
 }
 
+// GetPipelineStartTimeMills
 func GetPipelineStartTimeMills() string {
 	return gAtomBaseParam.PipelineStartTimeMills
 }
 
+// GetPipelineVersion
 func GetPipelineVersion() string {
 	return gAtomBaseParam.PipelineVersion
 }
 
+// GetWorkspace
 func GetWorkspace() string {
 	return gAtomBaseParam.BkWorkspace
 }

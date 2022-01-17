@@ -47,6 +47,7 @@ const (
 	OutputFileEnv = "bk_data_output"
 )
 
+// SdkEnv
 type SdkEnv struct {
 	BuildType string `json:"buildType"`
 	ProjectId string `json:"projectId"`
@@ -57,6 +58,7 @@ type SdkEnv struct {
 	VmSeqId   string `json:"vmSeqId"`
 }
 
+// AtomBaseParam
 type AtomBaseParam struct {
 	PipelineVersion        string `json:"pipeline.version"`
 	ProjectName            string `json:"project.name"`
@@ -72,6 +74,7 @@ type AtomBaseParam struct {
 	BkWorkspace            string `json:"bkWorkspace"`
 }
 
+// BuildType
 type BuildType string
 
 const (
@@ -83,6 +86,7 @@ const (
 	BuildTypeTstackAgent = "TSTACK_AGENT"
 )
 
+// DataType
 type DataType string
 
 const (
@@ -91,6 +95,7 @@ const (
 	DataTypeReport   DataType = "report"
 )
 
+// Status
 type Status string
 
 const (
@@ -99,24 +104,29 @@ const (
 	StatusError   Status = "error"
 )
 
+// ArtifactData
 type ArtifactData struct {
 	Type  DataType `json:"type"`
 	Value []string `json:"value"`
 }
 
+// AddArtifact
 func (a *ArtifactData) AddArtifact(artifact string) {
 	a.Value = append(a.Value, artifact)
 }
 
+// AddArtifactAll
 func (a *ArtifactData) AddArtifactAll(artifacts []string) {
 	a.Value = append(a.Value, artifacts...)
 }
 
+// StringData
 type StringData struct {
 	Type  DataType `json:"type"`
 	Value string   `json:"value"`
 }
 
+// ReportData
 type ReportData struct {
 	Type   DataType `json:"type"`
 	Label  string   `json:"label"`
@@ -124,6 +134,7 @@ type ReportData struct {
 	Target string   `json:"target"`
 }
 
+// NewReportData
 func NewReportData(label string, path string, target string) *ReportData {
 	return &ReportData{
 		Type:   DataTypeReport,
@@ -133,6 +144,7 @@ func NewReportData(label string, path string, target string) *ReportData {
 	}
 }
 
+// NewStringData
 func NewStringData(value string) *StringData {
 	return &StringData{
 		Type:  DataTypeString,
@@ -140,6 +152,7 @@ func NewStringData(value string) *StringData {
 	}
 }
 
+// NewArtifactData
 func NewArtifactData() *ArtifactData {
 	return &ArtifactData{
 		Type:  DataTypeArtifact,
@@ -147,6 +160,7 @@ func NewArtifactData() *ArtifactData {
 	}
 }
 
+// AtomOutput
 type AtomOutput struct {
 	Status    Status                 `json:"status"`
 	Message   string                 `json:"message"`
@@ -155,6 +169,7 @@ type AtomOutput struct {
 	Data      map[string]interface{} `json:"data"`
 }
 
+// NewAtomOutput
 func NewAtomOutput() *AtomOutput {
 	output := new(AtomOutput)
 	output.Status = StatusSuccess
