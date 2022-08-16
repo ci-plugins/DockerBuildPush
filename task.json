@@ -7,6 +7,11 @@
     "target": "chmod +x ./app && ./app"
   },
   "input": {
+    "tip_top": {
+      "label": "插件公告",
+      "type": "tips",
+      "tipStr": "请尽快升级或调整版本为3.latest或者streamci设置为3.*低于3.x的版本即将不再维护更新。"
+    },
     "selectOp": {
       "label": "操作功能名(增删改查排序)",
       "default": "login_build_push",
@@ -27,7 +32,54 @@
         }
       ]
     },
-    "srcAuthType": {
+    "sourceMirrorTicketPair":{
+      "label": "镜像仓库host、凭证键值对(两个镜像仓以上登录才要关注) 域名:凭证名",
+      "type": "dynamic-parameter",
+      "required": false,
+      "desc": "- 这是额外仓库登录，源仓库和目标仓库都适用，如果你只有一个或两个域名镜像仓库需要登录可能不会用到本字段\n- 键：Dockerfile 中 From 指令对应的基础镜像仓库，例如：docker.hub.com\n - 值：登录键中基础镜像仓库的凭证名称，可以在【服务】->【管理工具】->【凭证管理】中创建，凭证类型应为 用户名+密码 的凭证名称\n举例:\n docker.hub.com   landun_ticket_user_pass",
+      "param": {
+        "paramType": "list",
+        "url": "",
+        "parameters": [
+          {
+            "id": "dockerLoginParam",
+            "paramModels": [
+              {
+                "id": "RepoHost",
+                "label": "镜像仓库域名",
+                "type": "input",
+                "listType": "list",
+                "isMultiple": false,
+                "url": "",
+                "disabled": false,
+                "value": "例子docker.hub.com"
+              },
+              {
+                "id": "LDCredentialId",
+                "label": "蓝盾凭证名",
+                "type": "select",
+                "listType": "url",
+                "isMultiple": false,
+                "list": [],
+                "url": "/ticket/api/user/credentials/{projectId}/hasPermissionList?permission=USE&page=1&pageSize=100&credentialTypes=USERNAME_PASSWORD",
+                "dataPath": "data.records",
+                "disabled": false,
+                "paramId": "credentialId",
+                "paramName": "credentialName",
+                "itemTargetUrl": "/ticket/{projectId}/createCredential/USERNAME_PASSWORD/true",
+                "itemText": "添加相应的凭证",
+                "hasAddItem": true,
+                "value": ""
+              }
+
+
+            ]
+          }
+
+        ]
+      }
+    },
+     "srcAuthType": {
       "label": "源镜像仓库认证类型",
       "default": "LANDUN_TICKET",
       "desc": "",

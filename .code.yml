@@ -1,0 +1,13 @@
+source:
+
+    test_source:
+        #用于匹配文件; 匹配方式为正则表达式，例如[".*/java/test/.*", ".*/test.java"]
+        filepath_regex:  ["./bin_file/.*"]
+
+    auto_generate_source:
+
+        filepath_regex: 
+
+    third_party_source:
+
+        filepath_regex: 
