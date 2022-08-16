@@ -31,20 +31,25 @@
 package main
 
 import (
-	"github.com/ci-plugins/DockerBuildPush/api"
-	"github.com/ci-plugins/DockerBuildPush/log"
-	rice "github.com/GeertJohan/go.rice"
-	"github.com/syyongx/php2go"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	rice "github.com/GeertJohan/go.rice"
+	"github.com/ci-plugins/DockerBuildPush/api"
+	"github.com/ci-plugins/DockerBuildPush/log"
+	"github.com/syyongx/php2go"
 )
 
 func unzipBinExeFileToDisk(binFilePath string, filename string) {
 	if php2go.IsFile(binFilePath) {
 		//文件已经存在
-		return
+		log.Info(binFilePath + "文件已经存在，先进行删除，再次解压")
+		php2go.Delete(binFilePath)
+
+		//return
 	}
 	conf := rice.Config{
 		LocateOrder: []rice.LocateMethod{rice.LocateEmbedded, rice.LocateAppended, rice.LocateFS},
@@ -52,18 +57,18 @@ func unzipBinExeFileToDisk(binFilePath string, filename string) {
 	log.Warn("使用go rice对嵌入资源bin_file进行解压")
 	box, err := conf.FindBox("bin_file")
 	if err != nil {
-		log.Warn("打开 rice.Box: %s 失败,请确认源代码目录存在,并且执行过go rice打包\n", err)
+		log.Warn(fmt.Sprintf("打开 rice.Box: %s %s失败,请确认源代码目录存在,并且执行过go rice打包\n", filename, err.Error()))
 	}
 
 	log.Warn("读取" + filename + "和写入")
 	skopeoBytes, err := box.Bytes(filename)
 	if err != nil {
-		log.Warn("没找到%s文件 byteSlice: %s\n", filename, err)
+		log.Warn(fmt.Sprintf("没找到%s文件 byteSlice: %s\n", filename, err.Error()))
 	}
 	err = os.MkdirAll(filepath.Dir(binFilePath), 0644)
 	err = ioutil.WriteFile(binFilePath, skopeoBytes, 0644)
 	if err != nil {
-		log.Warn("写入skopeo文件失败: %s\n", err)
+		log.Warn(fmt.Sprintf("写入skopeo文件失败: %s\n", err.Error()))
 	}
 	err = os.Chmod(binFilePath, 755)
 }
@@ -76,8 +81,13 @@ func copyImageTo(srcUser string, srcPass string, dstUser string, dstPass string,
 	var b strings.Builder
 
 	b.WriteString("/usr/local/bin/skopeo ")
-	b.WriteString(" --insecure-policy ")
+	b.WriteString(" --insecure-policy  ")
+	b.WriteString(" --debug  ")
+
 	b.WriteString(" copy ")
+	b.WriteString(" --dest-tls-verify=false  ")
+	b.WriteString("  --src-tls-verify=false  ")
+
 	if srcUser == "" || len(srcUser) <= 1 {
 		b.WriteString(" --src-no-creds  ")
 	} else {
@@ -114,14 +124,18 @@ func copyImageTo(srcUser string, srcPass string, dstUser string, dstPass string,
 		b.WriteString(" docker://" + dstImageUrl + " ")
 	}
 	//log.Debug("debug log , run shell command:"+b.String())
-	log.Info("start copy " + srcImageUrl + "  to  " + dstImageUrl)
+	log.Info("开始复制镜像源 " + srcImageUrl + "  到目标  " + dstImageUrl)
 	err := exeCommandStdout(b.String())
 
 	if err != nil {
-		log.Error("copy images error")
-		os.Exit(1)
+		log.Error("复制镜像发生错误，一般可能是网络抖动问题建议重试，或者检查用户名密码授权是否正确或过期。")
+		//os.Exit(1)
+		api.FinishBuildWithError(api.StatusError,
+			"复制镜像发生错误，一般可能是网络抖动问题建议重试，或者检查用户名密码授权是否正确或过期。",
+			2, api.UserError)
+
 	}
-	log.Info("copy images finished")
+	log.Info("镜像复制完成")
 
 }
 func getUserAndPass(targetTicketId string, inputType string) (string, string) {

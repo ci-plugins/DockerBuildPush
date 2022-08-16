@@ -26,7 +26,7 @@
  * NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
+ */
 
 package main
 
@@ -34,13 +34,14 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"github.com/ci-plugins/DockerBuildPush/api"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ci-plugins/DockerBuildPush/api"
 
 	"github.com/ci-plugins/DockerBuildPush/log"
 )
@@ -146,8 +147,6 @@ func mybuildGet(build MyBuildRequest) (*http.Request, error) {
 
 	return req, nil
 }
-
-
 
 func mygetAllHeaders() map[string]string {
 	var headers = make(map[string]string)

@@ -1,6 +1,5 @@
 # 一.说明
-最新版本请从 (https://github.com/ci-plugins/DockerBuildPush) 获取
-
+ 
 本软件是免费开源软件 [bk-ci](https://github.com/Tencent/bk-ci) 
 的第三方插件,主要用于编译,推送,复制OCI容器镜像三项功能.
 与本软件类似或同类的还有 [drone-kaniko](https://github.com/drone/drone-kaniko) 和  
@@ -19,12 +18,16 @@
 源代码请固定存放到`/data/landun/workspace/src/DockerBuildPushGo`
 否则请修改Makefile第一行的`CURRENT_DIR`变量定义为实际路径
 ```
-mkdir -p /data/landun/workspace/src/DockerBuildPushGo
-cd /data/landun/workspace/src/DockerBuildPushGo
+mkdir -p /data/landun/workspace/src/
+cd /data/landun/workspace/src/
 git clone https://github.com/ci-plugins/DockerBuildPush
+cd /data/landun/workspace/src/
+mv DockerBuildPush DockerBuildPushGo
+cd /data/landun/workspace/src/DockerBuildPushGo
 ```
 
 ## 2.下载proot执行文件
+这一步不是必须做在Makefile已有这个步骤，只是在网络不好或者下载不成功时进行手工确认.
 ```
 curl -L -o ./bin_file/proot https://github.com/proot-me/proot/releases/download/v5.3.0/proot-v5.3.0-x86_64-static
 chmod +x ./bin_file/proot
@@ -41,6 +44,12 @@ make -f Makefile
 成功的话将在当前目录的上两级目录生成`app`(无扩展名)和`task.json`文件.
 `../../bin/app`和`../../bin/task.json`
 
+这一步结束时必须在
+/data/landun/workspace/src/DockerBuildPushGo/bin_file目录下能看到三个文件
+且文件大小不能是零字节或者出现目录名。不符合描述的文件都是前述步骤编译发生了意外，请进行检查.
+/data/landun/workspace/src/DockerBuildPushGo/bin_file/proot
+/data/landun/workspace/src/DockerBuildPushGo/bin_file/skopeo
+/data/landun/workspace/src/DockerBuildPushGo/bin_file/executor
 ## 4.打包插件
 请把app和task.json打包到zip格式的根目录中.不要放在任何二级目录下.
 ```
@@ -50,18 +59,18 @@ zip -r ./app.zip app task.json
 
 # 三.依赖情况
 # 1.编译时第三方依赖
-[golang](https://golang.google.cn/) v1.14+
+[golang](https://golang.google.cn/) v1.18+  
 
-[go.rice](https://github.com/GeertJohan/go.rice) 固定v1.0.2
+[go.rice](https://github.com/GeertJohan/go.rice) 固定v1.0.2 ,不需要单独安装
 
-[glibc-static](https://www.gnu.org/software/libc/) v2.12+
+[glibc-static](https://www.gnu.org/software/libc/) v2.12+ 
 
 [gcc](https://www.gnu.org/software/gcc/) v4.8+
 
 [curl](https://github.com/curl/curl) v7.2+
 
 # 2.运行时第三方依赖
-[kaniko](https://github.com/GoogleContainerTools/kaniko) 固定v1.7.0
+[kaniko](https://github.com/GoogleContainerTools/kaniko) 固定v1.9.0
 
 [skopeo](https://github.com/containers/skopeo) v1.5.2+
 
