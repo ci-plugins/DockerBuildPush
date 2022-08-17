@@ -47,7 +47,7 @@ const (
 	OutputFileEnv = "bk_data_output"
 )
 
-// SdkEnv
+// SdkEnv sdk环境变量输入参数
 type SdkEnv struct {
 	BuildType string `json:"buildType"`
 	ProjectId string `json:"projectId"`
@@ -58,7 +58,7 @@ type SdkEnv struct {
 	VmSeqId   string `json:"vmSeqId"`
 }
 
-// AtomBaseParam
+// AtomBaseParam 流水线内部变量
 type AtomBaseParam struct {
 	PipelineVersion        string `json:"pipeline.version"`
 	ProjectName            string `json:"project.name"`
@@ -74,7 +74,7 @@ type AtomBaseParam struct {
 	BkWorkspace            string `json:"bkWorkspace"`
 }
 
-// BuildType
+// BuildType 构建类型
 type BuildType string
 
 const (
@@ -86,7 +86,7 @@ const (
 	BuildTypeTstackAgent = "TSTACK_AGENT"
 )
 
-// DataType
+// DataType 输出类型
 type DataType string
 
 const (
@@ -95,38 +95,49 @@ const (
 	DataTypeReport   DataType = "report"
 )
 
-// Status
+// Status 插件执行状态
 type Status string
 
+// 插件执行状态
 const (
 	StatusSuccess Status = "success"
 	StatusFailure Status = "failure"
 	StatusError   Status = "error"
 )
 
-// ArtifactData
+// ErrorType 执行错误类型
+type ErrorType int
+
+// 插件执行状态
+const (
+	UserError       ErrorType = 1
+	ThirdPartyError ErrorType = 2
+	PluginError     ErrorType = 3
+)
+
+// ArtifactData 构件类型
 type ArtifactData struct {
 	Type  DataType `json:"type"`
 	Value []string `json:"value"`
 }
 
-// AddArtifact
+// AddArtifact 添加构件
 func (a *ArtifactData) AddArtifact(artifact string) {
 	a.Value = append(a.Value, artifact)
 }
 
-// AddArtifactAll
+// AddArtifactAll 添加多个构件
 func (a *ArtifactData) AddArtifactAll(artifacts []string) {
 	a.Value = append(a.Value, artifacts...)
 }
 
-// StringData
+// StringData 字符型
 type StringData struct {
 	Type  DataType `json:"type"`
 	Value string   `json:"value"`
 }
 
-// ReportData
+// ReportData 报告型
 type ReportData struct {
 	Type   DataType `json:"type"`
 	Label  string   `json:"label"`
@@ -134,7 +145,7 @@ type ReportData struct {
 	Target string   `json:"target"`
 }
 
-// NewReportData
+// NewReportData 报告
 func NewReportData(label string, path string, target string) *ReportData {
 	return &ReportData{
 		Type:   DataTypeReport,
@@ -144,7 +155,7 @@ func NewReportData(label string, path string, target string) *ReportData {
 	}
 }
 
-// NewStringData
+// NewStringData 字符
 func NewStringData(value string) *StringData {
 	return &StringData{
 		Type:  DataTypeString,
@@ -152,7 +163,7 @@ func NewStringData(value string) *StringData {
 	}
 }
 
-// NewArtifactData
+// NewArtifactData 新构件
 func NewArtifactData() *ArtifactData {
 	return &ArtifactData{
 		Type:  DataTypeArtifact,
@@ -160,21 +171,43 @@ func NewArtifactData() *ArtifactData {
 	}
 }
 
-// AtomOutput
-type AtomOutput struct {
-	Status    Status                 `json:"status"`
-	Message   string                 `json:"message"`
-	ErrorCode int                    `json:"errorCode"`
-	Type      string                 `json:"type"`
-	Data      map[string]interface{} `json:"data"`
+// Qualitydata 质量红线数据
+type Qualitydata struct {
+	Value string `json:"value"`
 }
 
-// NewAtomOutput
+// String 质量红线数据
+func (a *Qualitydata) String() string {
+	return a.Value
+}
+
+// NewQualityData 创建质量红线数据
+func NewQualityData(value string) *Qualitydata {
+	return &Qualitydata{
+		Value: value,
+	}
+}
+
+// AtomOutput 插件输出
+type AtomOutput struct {
+	Status            Status                  `json:"status"`
+	Message           string                  `json:"message"`
+	ErrorCode         int                     `json:"errorCode"`
+	ErrorType         ErrorType               `json:"errorType"`
+	Type              string                  `json:"type"`
+	Data              map[string]interface{}  `json:"data"`
+	QualityData       map[string]*Qualitydata `json:"qualityData"`
+	PlatformCode      string                  `json:"platformCode"`
+	PlatformErrorCode int                     `json:"platformErrorCode"`
+}
+
+// NewAtomOutput 创建插件输出
 func NewAtomOutput() *AtomOutput {
 	output := new(AtomOutput)
 	output.Status = StatusSuccess
 	output.Message = "success"
 	output.Type = "default"
 	output.Data = make(map[string]interface{})
+	output.QualityData = make(map[string]*Qualitydata)
 	return output
 }

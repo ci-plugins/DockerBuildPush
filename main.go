@@ -31,10 +31,12 @@
 package main
 
 import (
+	"runtime"
+	"runtime/debug"
+	"strings"
+
 	"github.com/ci-plugins/DockerBuildPush/api"
 	"github.com/ci-plugins/DockerBuildPush/log"
-	"runtime"
-	"strings"
 )
 
 //SelectOP 动作执行分支选择和输入参数粗略检测
@@ -52,7 +54,7 @@ func SelectOP() {
 	targetRepoItemStr := api.GetInputParam("targetRepoItemStr")
 	sourceRepoItemsStr := api.GetInputParam("sourceRepoItemsStr")
 	dockerCommand := api.GetInputParam("dockerCommand")
-
+	//sourceMirrorTicketPair = api.GetInputParam("sourceMirrorTicketPair")
 	selectOp = strings.TrimSpace(selectOp)
 	targetImage = strings.TrimSpace(targetImage)
 	targetImageName = strings.TrimSpace(targetImageName)
@@ -78,18 +80,73 @@ func SelectOP() {
 		CopyImageTo()
 	}
 
-	log.Info("有问题看日志仍解决不了,请联系插件作者进行协助.")
+	log.Info("有问题看日志仍解决不了,请联系插件作者reynaldliu进行协助.")
 
 }
 
+func checkContains(in []string, check string) bool {
+	for _, v := range in {
+		if v == check {
+			return true
+		}
+	}
+	return false
+}
 
+// FormatStack 格式化stack trace
+func FormatStack(in map[string]string) string {
+	var sb strings.Builder
+	sb.WriteString("")
+	for k, v := range in {
+		sb.WriteString(k + "\n")
+		sb.WriteString("\t" + v + "\n")
+	}
+	return sb.String()
+}
+
+// ParseStack stacktrace
+func ParseStack(stackStr string) map[string]string {
+	retObj := make(map[string]string)
+	strArray := strings.Split(stackStr, "\n")
+	maxLen := len(strArray)
+	ignoreStr := []string{"runtime/debug.Stack()",
+		"runtime/debug.PrintStack()",
+		"SelectOP()",
+		"main.main()", "main.main.func1()"}
+	for k, _ := range strArray {
+		//出现第一个()号是函数行,不是最后一行越界
+		if k <= maxLen-1 {
+			if strings.Contains(strArray[k], "(") && strings.Contains(strArray[k], ")") {
+				//他的下一行也没有越界，并且包含.go
+				if k <= maxLen-1-1 {
+					if strings.Contains(strArray[k+1], ".go") {
+						if _, ok := retObj[strArray[k]]; !ok {
+							if !checkContains(ignoreStr, strArray[k]) {
+								retObj[strArray[k]] = strArray[k+1]
+							}
+						}
+					}
+				}
+			}
+		}
+
+	}
+	return retObj
+}
 func main() {
 	runtime.GOMAXPROCS(4)
 	defer func() {
 		if err := recover(); err != nil {
+			errStack := FormatStack(ParseStack(string(debug.Stack())))
+
 			log.Error("panic: ", err)
-			log.Info("有问题看日志仍解决不了,请联系插件作者进行协助.")
-			api.FinishBuild(api.StatusError, "panic occurs")
+			log.Info("有问题看日志仍解决不了,请联系插件作者reynaldliu进行协助.")
+			//api.FinishBuild(api.StatusError, "panic occurs")
+
+			api.FinishBuildWithError(api.StatusError,
+				"插件级系统错误"+errStack,
+				2, api.PluginError)
+
 		}
 	}()
 	SelectOP()

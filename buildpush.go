@@ -34,16 +34,19 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	"github.com/ci-plugins/DockerBuildPush/api"
-	"github.com/ci-plugins/DockerBuildPush/log"
-	"github.com/syyongx/php2go"
-	"github.com/tidwall/sjson"
-	"github.com/txn2/txeh"
 	"io"
 	"net/url"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
+
+	"github.com/ci-plugins/DockerBuildPush/api"
+	"github.com/ci-plugins/DockerBuildPush/log"
+	"github.com/syyongx/php2go"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
+	"github.com/txn2/txeh"
 )
 
 func saveStringToFile(savePath string, jsonStr string) {
@@ -69,7 +72,9 @@ func addOrUpdateDockerConfigJson(savePath string, domain string, username string
 		newJsonStr, _ := sjson.Set(oldJsonStr, "auths."+slashDomain+".auth", encodeUsernameAndPassword)
 		saveStringToFile(savePath, newJsonStr)
 	} else {
-		log.Error("docker login域名和用户名不能为空")
+		api.FinishBuildWithError(api.StatusError,
+			"docker login域名和用户名不能为空",
+			2, api.UserError)
 	}
 }
 
@@ -89,6 +94,36 @@ func createDockerConfigFile(savePath string) {
 	}
 
 	addOrUpdateDockerConfigJson(savePath, repo.Host, username, password)
+
+	//extra 额外key value pair处理
+	sourceMirrorTicketPair := api.GetInputParam("sourceMirrorTicketPair")
+	if len(sourceMirrorTicketPair) > 15 {
+		//#表示取全部元素。|表示管道用于进行count统计个数
+		TicketPairCountResult := gjson.Get(sourceMirrorTicketPair, "#.values|#")
+		TicketPairCount, _ := strconv.Atoi(TicketPairCountResult.Raw)
+
+		for i := 0; i <= TicketPairCount; i++ {
+			repoHost := gjson.Get(sourceMirrorTicketPair, "#.values.0.value").Get(strconv.Itoa(i)).Str
+			landunTicketId := gjson.Get(sourceMirrorTicketPair, "#.values.1.value").Get(strconv.Itoa(i)).Str
+			if len(repoHost) > 5 && len(landunTicketId) > 3 {
+				username_extra := ""
+				password_extra := ""
+				username_extra, password_extra = getUserAndPass(landunTicketId, "dst")
+				var repo_extra *url.URL
+				if !strings.Contains(repoHost, "http://") {
+					repo_extra, _ = url.Parse("http://" + repoHost)
+
+				} else {
+					repo_extra, _ = url.Parse(repoHost)
+
+				}
+				if len(repo_extra.Host) > 2 && len(username_extra) > 2 && len(password_extra) > 2 {
+					addOrUpdateDockerConfigJson(savePath, repo_extra.Host, username_extra, password_extra)
+				}
+
+			}
+		}
+	}
 }
 
 func myCopy(src, dst string) {
@@ -97,7 +132,7 @@ func myCopy(src, dst string) {
 	if err != nil {
 
 	}
-	log.Info("copy " + src + " to  " + dst)
+	log.Info("复制 " + src + "  到  " + dst)
 
 }
 
@@ -179,6 +214,8 @@ func createBashFile51(landunWorkSpacePath string) {
 
 	b.WriteString(dstIgnores)
 	b.WriteString(" --skip-tls-verify  ")
+	//b.WriteString(" --cache=false  ")
+
 	//docker build的工作目录和Dockerfile路径
 	fixedDockerfilePath := fixedPath("/workspace/" + dockerFilePath)
 	fixedBuildWorkspacePath := fixedPath("/workspace/" + dockerBuildDir)
@@ -205,7 +242,10 @@ func addHostsToFile() {
 	oldHostsFile, _ := txeh.ParseHosts(savePath)
 	hosts, err := txeh.NewHostsDefault()
 	if err != nil {
-		panic(err)
+		api.FinishBuildWithError(api.StatusError,
+			"添加或修改/etc/hosts时出错，请检查文件存在或具有读写权限",
+			2, api.UserError)
+		//panic(err)
 	}
 	//添加回文件已有的hosts内容.
 	for _, v := range oldHostsFile {
@@ -217,11 +257,11 @@ func addHostsToFile() {
 		addHost, _ := ParseStringHosts(hostContent + "\n")
 		for _, l := range addHost {
 			hosts.AddHosts(l.Address, l.Hostnames)
-			log.Debug("add to stage : "+l.Address+" ,", l.Hostnames[0])
+			log.Debug("添加host内容 : "+l.Address+" ,", l.Hostnames[0])
 		}
 	}
 
-	log.Debug("==New hosts file content is==:\n" + hosts.RenderHostsFile() + "\n=================")
+	log.Debug("==添加host内容后新的host总体内容是==:\n" + hosts.RenderHostsFile() + "\n=================")
 	errSave := hosts.SaveAs(savePath)
 	if errSave != nil {
 
@@ -239,17 +279,22 @@ func initDockerFileEnv(landunWorkSpacePath string, dockerBuildWorkpacePath strin
 		dockerBuildDir == landunWorkSpacePath {
 		log.Error("docker build工作空间范围太大,有可能拷贝时间很长,或者镜像变太大.")
 		log.Error("请缩小docker build目录范围,以及减少docker build目录文件数")
-		os.Exit(1)
+		api.FinishBuildWithError(api.StatusError,
+			"docker build工作空间范围太大,有可能拷贝时间很长,或者镜像变太大."+
+				"请缩小docker build目录范围,以及减少docker build目录文件数",
+			2, api.UserError)
 	} else {
 		log.Info("正在复制docker workspace工作目录进kaniko rootfs workspace目录,请稍候,文件较多的话可能需等待较长时间.")
 		workspaceSrcPath := fixedPath(landunWorkSpacePath + "/" + dockerBuildDir + "/.")
 		workspaceDstPath := fixedPath(dockerBuildWorkpacePath + "/" + dockerBuildDir + "/")
-		log.Info("copy " + workspaceSrcPath + " to  " + workspaceDstPath)
+		log.Info("复制 " + workspaceSrcPath + "  目录所有文件到  " + workspaceDstPath)
 
 		err := exeCommandStdout("mkdir -p " + workspaceDstPath +
 			" && cp -f  -r " + workspaceSrcPath + " " + workspaceDstPath)
 		if err != nil {
-
+			api.FinishBuildWithError(api.StatusError,
+				"复制内容出错...请检查目录路径存在及是否有权限",
+				2, api.UserError)
 		}
 	}
 
@@ -270,6 +315,11 @@ func initKanikoEnv() (string, string, string, string) {
 	dockerBuildWorkpacePath := KanikoRootFSPath + "/workspace/"
 	DockerConfigPath := KanikoExecutePath + "/.docker"
 	err := errors.New("")
+	//clear all cache first   /kaniko_rootfs/ last build cache file
+	log.Info("清除前一次构建缓存和chroot镜像展开的根目录 : " + KanikoRootFSPath + " 请稍等.....")
+	err = os.RemoveAll(KanikoRootFSPath)
+	//create new dir
+	log.Info("开始预创建docker build需要的根文件系统目录结构")
 	err = os.MkdirAll(LandunWorkSpacePath, 755)
 	err = os.MkdirAll(KanikoRootFSPath, 755)
 	err = os.MkdirAll(KanikoExecutePath, 755)
@@ -316,10 +366,15 @@ func loginAndBuildPush() {
 	err := exeCommandStdout(LandunWorkSpacePath + "/myrun.sh")
 
 	if err != nil {
-		os.Exit(1)
+		//os.Exit(1)
+
+		api.FinishBuildWithError(api.StatusError,
+			"运行bash失败，你可以通过登录构建机器workspace目录下./myrun.sh进行重现过程.",
+			2, api.UserError)
 	}
 	log.Info("============")
-	log.Info("编译镜像和push成功....")
+	log.Info("编译镜像和push执行结束.\n")
+	log.Info("但不一定代表构件结果是正确，若有文件缺失情况，通常是dockerBuildArgs和dockerBuildDir两个输入参数设置问题.\n")
 	log.Info("============")
 
 }
