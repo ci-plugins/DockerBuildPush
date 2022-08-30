@@ -571,7 +571,19 @@
           }
         ]
       }
+    },
+	"authVersion": {
+      "label": "镜像仓库的api版本v1/v2",
+      "default": "v2",
+      "placeholder": "可取的值只有v1和v2镜像仓库的api版本,优先默认用v2,不行的时候改成v1试试,这个设置同时对源和目标仓生效，不是支持一个v1一个v2",
+      "type": "vuex-input",
+      "required": false,
+      "disabled": false,
+      "hidden": false,
+      "isSensitive": false
+
     }
+
   },
   "output": {
     "BK_DOCKER_TARGE_IMAGE_NAME": {

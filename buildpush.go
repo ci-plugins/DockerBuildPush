@@ -60,7 +60,11 @@ func saveStringToFile(savePath string, jsonStr string) {
 
 func addOrUpdateDockerConfigJson(savePath string, domain string, username string, password string) {
 	if username != "" && domain != "" {
-
+		if !strings.Contains(domain, ".") {
+			log.Warn(domain + "不含有.号域名分隔符，可能不是一个合法的域名，请检查仓库镜像前缀地址是否有误.")
+		} else {
+			log.Warn("正在往config.json添加登录认证信息，域名是:" + domain + "")
+		}
 		encodeUsernameAndPassword := base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
 		//转义域名中的特殊字符避开jq语法关键字
 		slashDomain := strings.Replace(domain, ".", "\\.", 100)
@@ -74,7 +78,7 @@ func addOrUpdateDockerConfigJson(savePath string, domain string, username string
 	} else {
 		api.FinishBuildWithError(api.StatusError,
 			"docker login域名和用户名不能为空",
-			2, api.UserError)
+			100002, api.UserError)
 	}
 }
 
@@ -91,6 +95,17 @@ func createDockerConfigFile(savePath string) {
 	} else {
 		repo, _ = url.Parse(targetImage)
 
+	}
+
+	if repo.Host == "" || !strings.Contains(repo.Host, ".") || strings.Contains(repo.Host, "docker.io") {
+		addOrUpdateDockerConfigJson(savePath, "https://index.docker.io/v1/", username, password)
+		//addOrUpdateDockerConfigJson(savePath, "https://index.docker.io/v2/", username, password)
+		addOrUpdateDockerConfigJson(savePath, "docker.io", username, password)
+	} else {
+		authVersion := api.GetInputParam("authVersion")
+		if authVersion == "v1" {
+			addOrUpdateDockerConfigJson(savePath, "https://"+repo.Host+"/v1/", username, password)
+		}
 	}
 
 	addOrUpdateDockerConfigJson(savePath, repo.Host, username, password)
@@ -244,7 +259,7 @@ func addHostsToFile() {
 	if err != nil {
 		api.FinishBuildWithError(api.StatusError,
 			"添加或修改/etc/hosts时出错，请检查文件存在或具有读写权限",
-			2, api.UserError)
+			100002, api.UserError)
 		//panic(err)
 	}
 	//添加回文件已有的hosts内容.
@@ -282,7 +297,7 @@ func initDockerFileEnv(landunWorkSpacePath string, dockerBuildWorkpacePath strin
 		api.FinishBuildWithError(api.StatusError,
 			"docker build工作空间范围太大,有可能拷贝时间很长,或者镜像变太大."+
 				"请缩小docker build目录范围,以及减少docker build目录文件数",
-			2, api.UserError)
+			100002, api.UserError)
 	} else {
 		log.Info("正在复制docker workspace工作目录进kaniko rootfs workspace目录,请稍候,文件较多的话可能需等待较长时间.")
 		workspaceSrcPath := fixedPath(landunWorkSpacePath + "/" + dockerBuildDir + "/.")
@@ -294,7 +309,7 @@ func initDockerFileEnv(landunWorkSpacePath string, dockerBuildWorkpacePath strin
 		if err != nil {
 			api.FinishBuildWithError(api.StatusError,
 				"复制内容出错...请检查目录路径存在及是否有权限",
-				2, api.UserError)
+				100002, api.UserError)
 		}
 	}
 
@@ -370,7 +385,7 @@ func loginAndBuildPush() {
 
 		api.FinishBuildWithError(api.StatusError,
 			"运行bash失败，你可以通过登录构建机器workspace目录下./myrun.sh进行重现过程.",
-			2, api.UserError)
+			100002, api.UserError)
 	}
 	log.Info("============")
 	log.Info("编译镜像和push执行结束.\n")
